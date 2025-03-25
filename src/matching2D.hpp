@@ -32,12 +32,11 @@ std::string getStringDescriptorType(DescriptorType descriptorType);
 bool isBinaryDescriptor(DescriptorType descriptorType);
 
 void visualizeImage(const cv::Mat &img, const std::vector<cv::KeyPoint> &keypoints);
-void detKeypointsHarris(std::vector<cv::KeyPoint> &keypoints, cv::Mat &img);
-void detKeypointsShiTomasi(std::vector<cv::KeyPoint> &keypoints, cv::Mat &img);
+void detKeypointsHarris(std::vector<cv::KeyPoint> &keypoints, const cv::Mat &img);
+void detKeypointsShiTomasi(std::vector<cv::KeyPoint> &keypoints, const cv::Mat &img);
 void detKeypointsModern(std::vector<cv::KeyPoint> &keypoints, cv::Mat &img, DetectorType detectorType);
-void detKeypoints(std::vector<cv::KeyPoint> &keypoints, cv::Mat &img, bool visualize, DetectorType detectorType);
-void descKeypoints(std::vector<cv::KeyPoint> &keypoints, cv::Mat &img, cv::Mat &descriptors, DescriptorType descriptorType);
-void matchDescriptors(std::vector<cv::KeyPoint> &kPtsSource, std::vector<cv::KeyPoint> &kPtsRef, cv::Mat &descSource, cv::Mat &descRef,
-                      std::vector<cv::DMatch> &matches, bool binaryDescriptor, MatcherType matcherType, SelectorType selectorType, bool crossCheck = false);
+void detKeypoints(std::vector<cv::KeyPoint> &keypoints, const cv::Mat &img, const bool visualize, const DetectorType detectorType);
+void descKeypoints(std::vector<cv::KeyPoint> &keypoints, const cv::Mat &img, cv::Mat &descriptors, const DescriptorType descriptorType);
+void matchDescriptors(const std::vector<cv::KeyPoint> &kPtsSource, const std::vector<cv::KeyPoint> &kPtsRef, const cv::Mat &descSource, const cv::Mat &descRef, std::vector<cv::DMatch> &matches, const bool binaryDescriptor, const MatcherType matcherType, const SelectorType selectorType, const bool crossCheck = false);
 
 #endif /* matching2D_hpp */

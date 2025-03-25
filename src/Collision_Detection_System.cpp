@@ -55,12 +55,87 @@ void visualizeMatches(const std::deque<DataFrame> &dataBuffer, const std::vector
     cv::waitKey(0); // wait for key to be pressed
 }
 
+/**
+ * @brief Get the Image object by receiving the path to it
+ * 
+ * @param imgStartIndex of the image
+ * @param imgEndIndex of the image
+ * @param imgFillWidth are the number of zeros need to preprend
+ * @param imgIndex of our dataset
+ * @param imgPathPrefix the path that goes before the name of image
+ * @param imgFileType 'png', etc.
+ * @return cv::Mat gray image
+ */
+cv::Mat getImage(const int imgStartIndex, const int imgEndIndex, const int imgFillWidth, const int imgIndex, const std::string imgPathPrefix, const std::string imgFileType) {
+    // Get the full name of the image by using correct pattern
+    std::ostringstream imgNumber;
+    imgNumber << std::setfill('0') << std::setw(imgFillWidth) << imgStartIndex + imgIndex;
+    std::string imgFullFilename = imgPathPrefix + imgNumber.str() + imgFileType;
+
+    // Convert to grayscale
+    cv::Mat img, imgGray;
+    img = cv::imread(imgFullFilename);
+    cv::cvtColor(img, imgGray, cv::COLOR_BGR2GRAY);
+
+    return imgGray;
+}
+
+/**
+ * @brief Function which obtains the keypoints of an image based on the parameters received 
+ * 
+ * @param imgGray which is image that we will compute keypoints
+ * @param visualize_keypoints bool variable to know if visualize image
+ * @param detectorType is the type of detector algorithm to use
+ * @param bFocusOnVehicle if true then removes the keypoints that are not part of vehicle in front
+ * @param limitKpts for debugging purposes, to limit kpts and see them in image
+ * @param vehicleRect rectangle that crops the vehicle in front
+ * @param keypoints vector where the keypoints will be saved
+ */
+void detectImageKeypoints(const cv::Mat imgGray, const bool visualize_keypoints, const DetectorType detectorType, const bool bFocusOnVehicle, const bool limitKpts, const cv::Rect vehicleRect, std::vector<cv::KeyPoint> keypoints) {
+    // Obtain time to get keypoints
+    auto start = std::chrono::high_resolution_clock::now();
+
+    // Keypoints array gets added the keypoints
+    detKeypoints(keypoints, imgGray, visualize_keypoints, detectorType);
+
+    auto end = std::chrono::high_resolution_clock::now();
+    auto time = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
+    std::cout << getStringDetectorType(detectorType) << " detection with n= " << keypoints.size() << " in " << time.count() * 0.001 << " s" << std::endl;
+    
+    //* Only keep keypoints on the preceding vehicle
+    if (bFocusOnVehicle) {
+        // If a keypoint is outside the box parameter, then remove it from the vector
+        keypoints.erase(
+            std::remove_if(
+                keypoints.begin(),
+                keypoints.end(),
+                [&vehicleRect](cv::KeyPoint const &keyPoint) {
+                    int x = keyPoint.pt.x;
+                    int y = keyPoint.pt.y;
+                    cv::Point p(x, y);
+                    return !vehicleRect.contains(p);
+                }
+            ),
+            keypoints.end()
+        );
+    }
+
+    if (visualize_keypoints)
+        visualizeImage(imgGray, keypoints);
+
+    //* Only use for debugging purposes when want to visualize the keypoints
+    if (limitKpts) {
+        limitKeyPoints(detectorType, keypoints, 50);
+    }
+}
+
 int main(int argc, const char *argv[]) {
     
     //* Set up image reading parameters
     std::string dataPath = "../";
     std::string imgBasePath = dataPath + "images/";
     std::string imgPrefix = "KITTI/2011_09_26/image_00/data/000000"; // left camera, color
+    std::string imgPathPrefix = imgBasePath + imgPrefix;
     std::string imgFileType = ".png";
 
     int imgStartIndex = 0; // first file index to load (assumes Lidar and camera names have identical naming convention)
@@ -76,7 +151,6 @@ int main(int argc, const char *argv[]) {
 
     //* Loop over all imges
     for (size_t imgIndex = 0; imgIndex <= imgEndIndex - imgStartIndex; imgIndex++) {
-        std::cout << "Image index: " << imgIndex << std::endl;
         //* Main variables used across all the function
         // Variables to extract 2D keypoints from current image
         std::vector<cv::KeyPoint> keypoints;
@@ -102,16 +176,11 @@ int main(int argc, const char *argv[]) {
         bool visualize_keypoints = true;
         bool visualize_keypoint_matches = false;
 
-        //* Load image and save it into data structure
-        // Get the full name of the image by using correct pattern
-        std::ostringstream imgNumber;
-        imgNumber << std::setfill('0') << std::setw(imgFillWidth) << imgStartIndex + imgIndex;
-        std::string imgFullFilename = imgBasePath + imgPrefix + imgNumber.str() + imgFileType;
+        //* Start creating and matching keypoints
+        std::cout << "Image index: " << imgIndex << std::endl;
 
-        // Convert to grayscale
-        cv::Mat img, imgGray;
-        img = cv::imread(imgFullFilename);
-        cv::cvtColor(img, imgGray, cv::COLOR_BGR2GRAY);
+        //* Load image and save it into data structure
+        cv::Mat imgGray = getImage(imgStartIndex, imgEndIndex, imgFillWidth, imgIndex, imgPathPrefix, imgFileType);
 
         // Push image into data frame buffer
         DataFrame frame;
@@ -122,43 +191,9 @@ int main(int argc, const char *argv[]) {
         if (dataBuffer.size() > dataBufferSizeLimit) dataBuffer.pop_back();
 
         //* Detect image keypoints
-        // Obtain time to get keypoints
-        auto start = std::chrono::high_resolution_clock::now();
-
-        // Keypoints array gets added the keypoints
-        detKeypoints(keypoints, imgGray, visualize_keypoints, detectorType);
-
-        auto end = std::chrono::high_resolution_clock::now();
-        auto time = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
-        std::cout << getStringDetectorType(detectorType) << " detection with n= " << keypoints.size() << " in " << time.count() * 0.001 << " s" << std::endl;
+        detectImageKeypoints(imgGray, visualize_keypoints, detectorType, bFocusOnVehicle, limitKpts, vehicleRect, keypoints);
         
-        //* Only keep keypoints on the preceding vehicle
-        if (bFocusOnVehicle) {
-            // If a keypoint is outside the box parameter, then remove it from the vector
-            keypoints.erase(
-                std::remove_if(
-                    keypoints.begin(),
-                    keypoints.end(),
-                    [&vehicleRect](cv::KeyPoint const &keyPoint) {
-                        int x = keyPoint.pt.x;
-                        int y = keyPoint.pt.y;
-                        cv::Point p(x, y);
-                        return !vehicleRect.contains(p);
-                    }
-                ),
-                keypoints.end()
-            );
-        }
-
-        if (visualize_keypoints)
-            visualizeImage(imgGray, keypoints);
-
-        //* Only use for midterm, for final project must be false
-        if (limitKpts) {
-            limitKeyPoints(detectorType, keypoints, 50);
-        }
-        
-        // push keypoints and descriptor for current frame to end of data buffer
+        // Push keypoints for current frame to front of data buffer
         dataBuffer.front().keypoints = keypoints;
 
         //* Extract KeyPoint descriptors

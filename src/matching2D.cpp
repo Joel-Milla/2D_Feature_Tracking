@@ -41,8 +41,7 @@ void visualizeImage(const cv::Mat &img, const vector<cv::KeyPoint> &keypoints) {
  * @param selectorType is the selector algorithm to use (nearest neighbor, or k nearest neighbor)
  * @param crossCheck boolean value if want to apply crosscheck
  */
-void matchDescriptors(std::vector<cv::KeyPoint> &kPtsSource, std::vector<cv::KeyPoint> &kPtsRef, cv::Mat &descSource, cv::Mat &descRef,
-std::vector<cv::DMatch> &matches, bool binaryDescriptor, MatcherType matcherType, SelectorType selectorType, bool crossCheck) {
+void matchDescriptors(const std::vector<cv::KeyPoint> &kPtsSource, const std::vector<cv::KeyPoint> &kPtsRef, const cv::Mat &descSource, const cv::Mat &descRef, std::vector<cv::DMatch> &matches, const bool binaryDescriptor, const MatcherType matcherType, const SelectorType selectorType, const bool crossCheck) {
     //* configure matcher
     cv::Ptr<cv::DescriptorMatcher> matcher;
 
@@ -111,7 +110,7 @@ std::vector<cv::DMatch> &matches, bool binaryDescriptor, MatcherType matcherType
  * @param descriptors container where the values will be saved
  * @param descriptorType which is the algorithm to run (BRISK, BRIEF, ORB, AKAZE, SIFT)
  */
-void descKeypoints(vector<cv::KeyPoint> &keypoints, cv::Mat &img, cv::Mat &descriptors, DescriptorType descriptorType) {
+void descKeypoints(vector<cv::KeyPoint> &keypoints, const cv::Mat &img, cv::Mat &descriptors, const DescriptorType descriptorType) {
     //* Select descriptor and execute it
     cv::Ptr<cv::DescriptorExtractor> descriptor;
     switch (descriptorType) {
@@ -136,6 +135,7 @@ void descKeypoints(vector<cv::KeyPoint> &keypoints, cv::Mat &img, cv::Mat &descr
         break;
     }
     
+    // keypoints is modified when not able to make descriptors
     descriptor->compute(img, keypoints, descriptors);
 }
 
@@ -148,7 +148,7 @@ void descKeypoints(vector<cv::KeyPoint> &keypoints, cv::Mat &img, cv::Mat &descr
  * @param point_col The number of column of the original point
  * @return int - Maximum number
  */
-int getMaxValue(const cv::Mat& img, int windows_size, int point_row, int point_col) {
+int getMaxValue(const cv::Mat& img, const int windows_size, const int point_row, const int point_col) {
     int local_maximum = img.at<int>(point_row, point_col);
 
     std::vector<pair<int,int>> movements = {{-1,-1},{-1,0},
@@ -181,7 +181,7 @@ int getMaxValue(const cv::Mat& img, int windows_size, int point_row, int point_c
  * @param img Image to calculate the keypoints
  * @param visualize value to visualize or not
  */
-void detKeypointsHarris(std::vector<cv::KeyPoint> &keypoints, cv::Mat &img, bool visualize) {
+void detKeypointsHarris(std::vector<cv::KeyPoint> &keypoints, const cv::Mat &img, const bool visualize) {
     // Detector parameters
     int blockSize = 2;     // for every pixel, a blockSize × blockSize neighborhood is considered. This replaces the standar deviation that was explained, so the block size defines the number of neighboors that are considered for detecting the keypoints
     int apertureSize = 3;  // aperture parameter for Sobel operator (must be odd). Can control the size of the sobel operator. But larger makes it better for noise but also makes it less precise. 
@@ -257,7 +257,7 @@ void detKeypointsShiTomasi(vector<cv::KeyPoint> &keypoints, const cv::Mat &img, 
  * @param img Image that will be used to calculate keypoints
  * @param detectorType Can be FAST, BRISK, ORB, AKAZE, and SIFT
  */
-void detKeypointsModern(std::vector<cv::KeyPoint> &keypoints, cv::Mat &img, DetectorType detectorType) {
+void detKeypointsModern(std::vector<cv::KeyPoint> &keypoints, const cv::Mat &img, const DetectorType detectorType) {
     cv::Ptr<cv::FeatureDetector> detector;
 
     //* Depending on input, set the detector algorithm
@@ -293,7 +293,7 @@ void detKeypointsModern(std::vector<cv::KeyPoint> &keypoints, cv::Mat &img, Dete
  * @param visualize boolean variable to know if visualize results
  * @param detectorType is a variable to select algorithm, can be SHITOMASI, HARRIS, FAST, BRISK, ORB, AKAZE, and SIFT
  */
-void detKeypoints(vector<cv::KeyPoint> &keypoints, cv::Mat &img, bool visualize, DetectorType detectorType) {
+void detKeypoints(vector<cv::KeyPoint> &keypoints, const cv::Mat &img, const bool visualize, const DetectorType detectorType) {
     switch (detectorType) {
 
     case DetectorType::SHITOMASI:
