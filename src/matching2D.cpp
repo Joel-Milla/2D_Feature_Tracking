@@ -308,7 +308,7 @@ void detKeypoints(vector<cv::KeyPoint> &keypoints, const cv::Mat &img, const boo
       break;
     }
 
-    // if (visualize) visualizeImage(img, keypoints);
+    if (visualize) visualizeImage(img, keypoints);
 }
 
 /**

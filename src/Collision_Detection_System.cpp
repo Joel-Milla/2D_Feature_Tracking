@@ -33,7 +33,7 @@ void visualizeMatches(const std::deque<DataFrame> &dataBuffer, const std::vector
                     cv::Scalar::all(-1), cv::Scalar::all(-1),
                     std::vector<char>(), cv::DrawMatchesFlags::DRAW_RICH_KEYPOINTS);
 
-    std::string windowName = "Matching keypoints between two camera images";
+    std::string windowName = "show image";
     cv::namedWindow(windowName, 7);
     cv::imshow(windowName, matchImg);
     std::cout << "Press key to continue to next image" << std::endl;
@@ -190,8 +190,8 @@ int main(int argc, const char *argv[]) {
     int dataBufferSizeLimit = 2;       // no. of images which are held in memory (ring buffer) at the same time
 
     // Visualization variables
-    bool visualize_keypoints = false;
-    bool visualize_keypoint_matches = false;
+    bool visualize_keypoints = true;
+    bool visualize_keypoint_matches = true;
     bool limitKpts = false; // Only for debugging purposes
 
     // Types
@@ -222,20 +222,20 @@ int main(int argc, const char *argv[]) {
     };
 
     //* Loop over all possible descriptors and detectors
-    for (const auto &detector : allDetectors) {
+    // for (const auto &detector : allDetectors) {
         
-        detectorType = detector;
-        for (const auto &descriptor : allDescriptors) {
+    //     detectorType = detector;
+    //     for (const auto &descriptor : allDescriptors) {
             std::deque<DataFrame> dataBuffer; // Dequeue for fast insertion/deletion at the ends of the list
-            descriptorType = descriptor;
+    //         descriptorType = descriptor;
 
-            if (detectorType == DetectorType::AKAZE || descriptorType == DescriptorType::AKAZE) {
-                if (detectorType != DetectorType::AKAZE || descriptorType != DescriptorType::AKAZE)
-                    continue;
-            }
+    //         if (detectorType == DetectorType::AKAZE || descriptorType == DescriptorType::AKAZE) {
+    //             if (detectorType != DetectorType::AKAZE || descriptorType != DescriptorType::AKAZE)
+    //                 continue;
+    //         }
 
-            if (detectorType == DetectorType::SIFT && descriptorType == DescriptorType::ORB)
-                continue; // sift and orb are incompatible or generate too much problems
+    //         if (detectorType == DetectorType::SIFT && descriptorType == DescriptorType::ORB)
+    //             continue; // sift and orb are incompatible or generate too much problems
 
             auto start = std::chrono::high_resolution_clock::now();
 
@@ -247,8 +247,8 @@ int main(int argc, const char *argv[]) {
             auto end = std::chrono::high_resolution_clock::now();
             auto time = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
             std::cout << "Time taken: " << time.count() * 0.001 << " s" << std::endl;
-        }
-    }
+        // }
+    // }
 
     return 0;
 }
