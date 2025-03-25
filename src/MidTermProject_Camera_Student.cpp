@@ -60,7 +60,7 @@ int main(int argc, const char *argv[]) {
         //* Detect image keypoints
         // Extract 2D keypoints from current image
         vector<cv::KeyPoint> keypoints;
-        string detectorType = "HARRIS";
+        string detectorType = "SIFT";
         bool visualize_keypoints = true;
 
         // Obtain time to get keypoints

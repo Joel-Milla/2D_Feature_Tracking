@@ -1,9 +1,10 @@
-#include <chrono>
-#include <numeric>
+#include <opencv2/core/cvstd_wrapper.hpp>
 #include <opencv2/core/hal/interface.h>
 #include <opencv2/core/types.hpp>
 #include <string>
 #include "matching2D.hpp"
+#include <opencv2/features2d.hpp>
+
 
 using namespace std;
 
@@ -73,12 +74,7 @@ void descKeypoints(vector<cv::KeyPoint> &keypoints, cv::Mat &img, cv::Mat &descr
 
         //...
     }
-
-    // perform feature description
-    double t = (double)cv::getTickCount();
     extractor->compute(img, keypoints, descriptors);
-    t = ((double)cv::getTickCount() - t) / cv::getTickFrequency();
-    cout << descriptorType << " descriptor extraction in " << 1000 * t / 1.0 << " ms" << endl;
 }
 
 /**
@@ -159,8 +155,6 @@ void detKeypointsHarris(std::vector<cv::KeyPoint> &keypoints, cv::Mat &img, bool
             }
         }
     }
-
-    if (visualize) visualizeImage(img, keypoints);
 }
 
 
@@ -171,7 +165,7 @@ void detKeypointsHarris(std::vector<cv::KeyPoint> &keypoints, cv::Mat &img, bool
  * @param img Image to calculate the keypoints
  * @param visualize bool variable
  */
-void detKeypointsShiTomasi(vector<cv::KeyPoint> &keypoints, cv::Mat &img, bool visualize) {
+void detKeypointsShiTomasi(vector<cv::KeyPoint> &keypoints, const cv::Mat &img, const bool visualize) {
     //* Parameters of the algorithm
     int blockSize = 4;       //  size of an average block for computing a derivative covariation matrix over each pixel neighborhood
     double maxOverlap = 0.0; // max. permissible overlap between two features in %
@@ -192,8 +186,26 @@ void detKeypointsShiTomasi(vector<cv::KeyPoint> &keypoints, cv::Mat &img, bool v
         newKeyPoint.size = blockSize;
         keypoints.push_back(newKeyPoint);
     }
+}
 
-    if (visualize) visualizeImage(img, keypoints);
+void detKeypointsModern(std::vector<cv::KeyPoint> &keypoints, cv::Mat &img, std::string detectorType) {
+    cv::Ptr<cv::FeatureDetector> detector;
+    if (detectorType == "FAST") {
+        detector = cv::FastFeatureDetector::create(30, true, cv::FastFeatureDetector::TYPE_9_16);
+    }
+    else if (detectorType == "BRISK") {
+        detector = cv::BRISK::create(30, true, cv::FastFeatureDetector::TYPE_9_16);
+    } 
+    else if (detectorType == "ORB") {
+        detector = cv::ORB::create();
+    }
+    else if (detectorType == "AKAZE") {
+        detector = cv::AKAZE::create();
+    }
+    else if (detectorType == "SIFT") {
+        detector = cv::SIFT::create();
+    }
+    detector->detect(img, keypoints);
 }
 
 void detKeypoints(vector<cv::KeyPoint> &keypoints, cv::Mat &img, bool visualize, std::string detectorType) {
@@ -203,4 +215,9 @@ void detKeypoints(vector<cv::KeyPoint> &keypoints, cv::Mat &img, bool visualize,
     else if (detectorType == "HARRIS") {
         detKeypointsHarris(keypoints, img, visualize);
     }
+    else {
+        detKeypointsModern(keypoints, img, detectorType);
+    }
+
+    if (visualize) visualizeImage(img, keypoints);
 }
