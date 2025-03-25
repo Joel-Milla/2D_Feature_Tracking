@@ -20,7 +20,7 @@ Implement a vector for dataBuffer objects with limited size (e.g., 2 elements), 
   - Removed all keypoints outside predefined rectangle
   - Focus on vehicle-only keypoints for collision time calculation
 
-<img src="images/keypoints.png" width="820" height="248" />
+<img src="images/keyPointsFrames.gif" width="700" height="400" />
 
 4. **Keypoint Description**
   - Implemented various descriptors (BRISK, BRIEF, ORB, AKAZE, SIFT)
@@ -40,9 +40,13 @@ Implement a vector for dataBuffer objects with limited size (e.g., 2 elements), 
   - Logged processing times for detection and extraction
   - Identified TOP3 detector/descriptor combinations based on performance
 
-Full evaluation results available in findings.txt
+## Conclusion
+My top three choices are:
+1. **FAST + BRISK**: Good balance between speed and performance with good scale and rotation invariance
+2. **FAST + ORB**: Strong performer with fast execution while maintaining quality descriptors and invariance properties
+3. **AKAZE**: Most stable option with consistently good performance across all results.
 
-<img src="images/keyPointsFrames.gif" width="700" height="400" />
+Full evaluation results available in findings.txt
 
 ## Dependencies for Running Locally
 1. cmake >= 3.22
