@@ -1,71 +1,61 @@
-/* INCLUDES FOR THIS PROJECT */
 #include <iostream>
-#include <fstream>
 #include <sstream>
 #include <iomanip>
 #include <vector>
 #include <cmath>
-#include <limits>
 #include <opencv2/core.hpp>
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
 #include <opencv2/features2d.hpp>
-#include <opencv2/xfeatures2d.hpp>
-#include <opencv2/xfeatures2d/nonfree.hpp>
+#include <deque>
 
 #include "dataStructures.h"
 #include "matching2D.hpp"
 
+
 using namespace std;
 
 /* MAIN PROGRAM */
-int main(int argc, const char *argv[])
-{
-
-    /* INIT VARIABLES AND DATA STRUCTURES */
-
-    // data location
+int main(int argc, const char *argv[]) {
+    
+    //* Set up image reading parameters
     string dataPath = "../";
-
-    // camera
     string imgBasePath = dataPath + "images/";
     string imgPrefix = "KITTI/2011_09_26/image_00/data/000000"; // left camera, color
     string imgFileType = ".png";
+
     int imgStartIndex = 0; // first file index to load (assumes Lidar and camera names have identical naming convention)
     int imgEndIndex = 9;   // last file index to load
     int imgFillWidth = 4;  // no. of digits which make up the file index (e.g. img-0001.png)
 
-    // misc
-    int dataBufferSize = 2;       // no. of images which are held in memory (ring buffer) at the same time
-    vector<DataFrame> dataBuffer; // list of data frames which are held in memory at the same time
+    //* Set up ring buffer
+    // If you will have thousands of images, you cannot have a single vector that will hold all the images. Overtime will fill memory and slow program.
+    // To solve this, create a data structure to hold limit number of images, and delete the old ones when adding new ones
+    int dataBufferSizeLimit = 2;       // no. of images which are held in memory (ring buffer) at the same time
+    deque<DataFrame> dataBuffer; // Dequeue for fast insertion/deletion at the ends of the list
     bool bVis = false;            // visualize results
 
-    /* MAIN LOOP OVER ALL IMAGES */
+    //* Loop over all imges
+    for (size_t imgIndex = 0; imgIndex <= imgEndIndex - imgStartIndex; imgIndex++) {
 
-    for (size_t imgIndex = 0; imgIndex <= imgEndIndex - imgStartIndex; imgIndex++)
-    {
-        /* LOAD IMAGE INTO BUFFER */
-
-        // assemble filenames for current index
+        //* Load image and save it into data structure
+        // Get the full name of the image by using correct pattern
         ostringstream imgNumber;
         imgNumber << setfill('0') << setw(imgFillWidth) << imgStartIndex + imgIndex;
         string imgFullFilename = imgBasePath + imgPrefix + imgNumber.str() + imgFileType;
 
-        // load image from file and convert to grayscale
+        // Convert to grayscale
         cv::Mat img, imgGray;
         img = cv::imread(imgFullFilename);
         cv::cvtColor(img, imgGray, cv::COLOR_BGR2GRAY);
 
-        //// STUDENT ASSIGNMENT
-        //// TASK MP.1 -> replace the following code with ring buffer of size dataBufferSize
-
-        // push image into data frame buffer
+        // Push image into data frame buffer
         DataFrame frame;
         frame.cameraImg = imgGray;
-        dataBuffer.push_back(frame);
+        dataBuffer.push_front(frame);
 
-        //// EOF STUDENT ASSIGNMENT
-        cout << "#1 : LOAD IMAGE INTO BUFFER done" << endl;
+        // Delete oldest image if size limit has been surpassed
+        if (dataBuffer.size() > dataBufferSizeLimit) dataBuffer.pop_back();
 
         /* DETECT IMAGE KEYPOINTS */
 
@@ -101,13 +91,12 @@ int main(int argc, const char *argv[])
         //// EOF STUDENT ASSIGNMENT
 
         // optional : limit number of keypoints (helpful for debugging and learning)
-        bool bLimitKpts = false;
-        if (bLimitKpts)
-        {
+        bool bLimitKpts = true;
+        if (bLimitKpts) {
             int maxKeypoints = 50;
 
-            if (detectorType.compare("SHITOMASI") == 0)
-            { // there is no response info, so keep the first 50 as they are sorted in descending quality order
+            if (detectorType.compare("SHITOMASI") == 0) { 
+                // there is no response info, so keep the first 50 as they are sorted in descending quality order
                 keypoints.erase(keypoints.begin() + maxKeypoints, keypoints.end());
             }
             cv::KeyPointsFilter::retainBest(keypoints, maxKeypoints);
@@ -134,9 +123,8 @@ int main(int argc, const char *argv[])
 
         cout << "#3 : EXTRACT DESCRIPTORS done" << endl;
 
-        if (dataBuffer.size() > 1) // wait until at least two images have been processed
-        {
-
+        if (dataBuffer.size() > 1) { 
+            // wait until at least two images have been processed
             /* MATCH KEYPOINT DESCRIPTORS */
 
             vector<cv::DMatch> matches;
