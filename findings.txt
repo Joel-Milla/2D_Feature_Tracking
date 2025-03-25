@@ -113,3 +113,32 @@ SIFT + BRIEF
 Time taken: 0.86 s
 SIFT + SIFT
 Time taken: 0.831 s
+
+Conclusions
+Top3 detectors average keypoint count and average point size
+1. BRISK
+Average count: 186.1 with average keypoint size of: 140.098
+2. ORB
+Average count: 115 with average keypoint size of: 560.097
+3. AKAZE
+Average count: 165.5 with average keypoint size of: 76.8091
+
+Top3 Average matches
+1. Akaze
+2. BRISK + SIFT
+3. FAST + BRIEF
+
+Top3 Speed
+1. FAST + ORB
+Time taken: 0.064 s
+2. SHITOMASI + ORB
+Time taken: 0.106 s
+3. HARRIS + ORB
+Time taken: 0.111 s
+
+Top3 Combination
+1. Fast + Brisk
+2. Fast + ORB
+3. Akaze
+
+This are my top three choices, because I feel that fast + brisk/orb has a good balance between speed, performance, and also quality of descriptors. Being fast and at the same time having scale invariance and rotation invariance is something that the top 2 have, and in a good balance. Third option is Akaze because it got good performance across all benchmarks and I believe is the most stable. 

@@ -5,7 +5,6 @@
 #include <numeric>
 #include <opencv2/core/mat.hpp>
 #include <opencv2/core/types.hpp>
-#include <ratio>
 #include <sstream>
 #include <iomanip>
 #include <string>
