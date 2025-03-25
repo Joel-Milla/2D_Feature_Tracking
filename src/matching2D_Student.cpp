@@ -188,8 +188,17 @@ void detKeypointsShiTomasi(vector<cv::KeyPoint> &keypoints, const cv::Mat &img, 
     }
 }
 
+/**
+ * @brief Implement modern keypoint detectors so when receiving parameters, can run differentt keypoint detector algorithms  
+ * 
+ * @param keypoints where the keypoints will be saved
+ * @param img Image that will be used to calculate keypoints
+ * @param detectorType Can be FAST, BRISK, ORB, AKAZE, and SIFT
+ */
 void detKeypointsModern(std::vector<cv::KeyPoint> &keypoints, cv::Mat &img, std::string detectorType) {
     cv::Ptr<cv::FeatureDetector> detector;
+
+    //* Depending on input, set the detector algorithm
     if (detectorType == "FAST") {
         detector = cv::FastFeatureDetector::create(30, true, cv::FastFeatureDetector::TYPE_9_16);
     }
@@ -205,9 +214,19 @@ void detKeypointsModern(std::vector<cv::KeyPoint> &keypoints, cv::Mat &img, std:
     else if (detectorType == "SIFT") {
         detector = cv::SIFT::create();
     }
+
+    //* Update keypoints
     detector->detect(img, keypoints);
 }
 
+/**
+ * @brief Function in charge of receiving what keypoint detector algorithm want to run, and then call the function accordingly, and show the results  
+ * 
+ * @param keypoints vector that save the results
+ * @param img that is used to calculate keypoints
+ * @param visualize boolean variable to know if visualize results
+ * @param detectorType is a variable to select algorithm, can be SHITOMASI, HARRIS, FAST, BRISK, ORB, AKAZE, and SIFT
+ */
 void detKeypoints(vector<cv::KeyPoint> &keypoints, cv::Mat &img, bool visualize, std::string detectorType) {
     if (detectorType == "SHITOMASI") {
         detKeypointsShiTomasi(keypoints, img, visualize);
