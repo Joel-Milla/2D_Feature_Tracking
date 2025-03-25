@@ -20,6 +20,16 @@
 
 using namespace std;
 
+void limitKeyPoints(const DetectorType &detectorType, vector<cv::KeyPoint> &keypoints, int maxKeypoints) {
+    //* Limit number of keypoints (helpful for debugging and learning)    
+    if (detectorType == SHITOMASI) { 
+        // there is no response info, so keep the first 50 as they are sorted in descending quality order
+        keypoints.erase(keypoints.begin() + maxKeypoints, keypoints.end());
+    }
+    cv::KeyPointsFilter::retainBest(keypoints, maxKeypoints);
+    cout << " NOTE: Keypoints have been limited!" << endl;
+}
+
 int main(int argc, const char *argv[]) {
     
     //* Set up image reading parameters
@@ -63,7 +73,7 @@ int main(int argc, const char *argv[]) {
         //* Detect image keypoints
         // Extract 2D keypoints from current image
         vector<cv::KeyPoint> keypoints;
-        string detectorType = "SIFT";
+        DetectorType detectorType = SIFT;
         bool visualize_keypoints = false;
 
         // Obtain time to get keypoints
@@ -94,29 +104,18 @@ int main(int argc, const char *argv[]) {
                 ),
                 keypoints.end()
             );
-            cout << "ENTERED!!";
         }
 
-        visualizeImage(imgGray, keypoints);
-
-        //// EOF STUDENT ASSIGNMENT
-
-        // optional : limit number of keypoints (helpful for debugging and learning)
-        bool bLimitKpts = true;
+        //* Only use for midterm, for final project must be false
+        bool bLimitKpts = false;
         if (bLimitKpts) {
-            int maxKeypoints = 50;
-
-            if (detectorType.compare("SHITOMASI") == 0) { 
-                // there is no response info, so keep the first 50 as they are sorted in descending quality order
-                keypoints.erase(keypoints.begin() + maxKeypoints, keypoints.end());
-            }
-            cv::KeyPointsFilter::retainBest(keypoints, maxKeypoints);
-            cout << " NOTE: Keypoints have been limited!" << endl;
+            limitKeyPoints(detectorType, keypoints, 50);
         }
-
+        
         // push keypoints and descriptor for current frame to end of data buffer
         (dataBuffer.end() - 1)->keypoints = keypoints;
         cout << "#2 : DETECT KEYPOINTS done" << endl;
+        
 
         /* EXTRACT KEYPOINT DESCRIPTORS */
 

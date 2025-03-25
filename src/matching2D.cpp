@@ -195,24 +195,28 @@ void detKeypointsShiTomasi(vector<cv::KeyPoint> &keypoints, const cv::Mat &img, 
  * @param img Image that will be used to calculate keypoints
  * @param detectorType Can be FAST, BRISK, ORB, AKAZE, and SIFT
  */
-void detKeypointsModern(std::vector<cv::KeyPoint> &keypoints, cv::Mat &img, std::string detectorType) {
+void detKeypointsModern(std::vector<cv::KeyPoint> &keypoints, cv::Mat &img, DetectorType detectorType) {
     cv::Ptr<cv::FeatureDetector> detector;
 
     //* Depending on input, set the detector algorithm
-    if (detectorType == "FAST") {
+    switch (detectorType) {
+    case FAST:
         detector = cv::FastFeatureDetector::create(30, true, cv::FastFeatureDetector::TYPE_9_16);
-    }
-    else if (detectorType == "BRISK") {
+        break;
+    case BRISK:
         detector = cv::BRISK::create(30, true, cv::FastFeatureDetector::TYPE_9_16);
-    } 
-    else if (detectorType == "ORB") {
+        break;
+    case ORB:
         detector = cv::ORB::create();
-    }
-    else if (detectorType == "AKAZE") {
+        break;
+    case AKAZE:
         detector = cv::AKAZE::create();
-    }
-    else if (detectorType == "SIFT") {
+        break;
+    case SIFT:
         detector = cv::SIFT::create();
+        break;
+    default:
+        return;
     }
 
     //* Update keypoints
@@ -227,15 +231,18 @@ void detKeypointsModern(std::vector<cv::KeyPoint> &keypoints, cv::Mat &img, std:
  * @param visualize boolean variable to know if visualize results
  * @param detectorType is a variable to select algorithm, can be SHITOMASI, HARRIS, FAST, BRISK, ORB, AKAZE, and SIFT
  */
-void detKeypoints(vector<cv::KeyPoint> &keypoints, cv::Mat &img, bool visualize, std::string detectorType) {
-    if (detectorType == "SHITOMASI") {
+void detKeypoints(vector<cv::KeyPoint> &keypoints, cv::Mat &img, bool visualize, DetectorType detectorType) {
+    switch (detectorType) {
+
+    case SHITOMASI:
         detKeypointsShiTomasi(keypoints, img, visualize);
-    }
-    else if (detectorType == "HARRIS") {
+        break;
+    case HARRIS:
         detKeypointsHarris(keypoints, img, visualize);
-    }
-    else {
+        break;
+    default:
         detKeypointsModern(keypoints, img, detectorType);
+      break;
     }
 
     if (visualize) visualizeImage(img, keypoints);
