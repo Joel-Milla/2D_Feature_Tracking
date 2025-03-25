@@ -1,4 +1,6 @@
+#include <chrono>
 #include <iostream>
+#include <opencv2/core/mat.hpp>
 #include <sstream>
 #include <iomanip>
 #include <vector>
@@ -15,7 +17,6 @@
 
 using namespace std;
 
-/* MAIN PROGRAM */
 int main(int argc, const char *argv[]) {
     
     //* Set up image reading parameters
@@ -37,7 +38,6 @@ int main(int argc, const char *argv[]) {
 
     //* Loop over all imges
     for (size_t imgIndex = 0; imgIndex <= imgEndIndex - imgStartIndex; imgIndex++) {
-
         //* Load image and save it into data structure
         // Get the full name of the image by using correct pattern
         ostringstream imgNumber;
@@ -57,26 +57,22 @@ int main(int argc, const char *argv[]) {
         // Delete oldest image if size limit has been surpassed
         if (dataBuffer.size() > dataBufferSizeLimit) dataBuffer.pop_back();
 
-        /* DETECT IMAGE KEYPOINTS */
+        //* Detect image keypoints
+        // Extract 2D keypoints from current image
+        vector<cv::KeyPoint> keypoints;
+        string detectorType = "HARRIS";
+        bool visualize_keypoints = true;
 
-        // extract 2D keypoints from current image
-        vector<cv::KeyPoint> keypoints; // create empty feature list for current image
-        string detectorType = "SHITOMASI";
+        // Obtain time to get keypoints
+        auto start = chrono::high_resolution_clock::now();
 
-        //// STUDENT ASSIGNMENT
-        //// TASK MP.2 -> add the following keypoint detectors in file matching2D.cpp and enable string-based selection based on detectorType
-        //// -> HARRIS, FAST, BRISK, ORB, AKAZE, SIFT
+        // Keypoints array gets added the keypoints
+        detKeypoints(keypoints, imgGray, visualize_keypoints, detectorType);
 
-        if (detectorType.compare("SHITOMASI") == 0)
-        {
-            detKeypointsShiTomasi(keypoints, imgGray, false);
-        }
-        else
-        {
-            //...
-        }
-        //// EOF STUDENT ASSIGNMENT
-
+        auto end = chrono::high_resolution_clock::now();
+        auto time = chrono::duration_cast<chrono::milliseconds>(end - start);
+        cout << detectorType << " detection with n= " << keypoints.size() << " in " << time.count() * 0.001 << " s" << endl;
+        
         //// STUDENT ASSIGNMENT
         //// TASK MP.3 -> only keep keypoints on the preceding vehicle
 
@@ -148,7 +144,7 @@ int main(int argc, const char *argv[]) {
             cout << "#4 : MATCH KEYPOINT DESCRIPTORS done" << endl;
 
             // visualize matches between current and previous image
-            bVis = true;
+            bool visualize_keypoint_matches = false;
             if (bVis)
             {
                 cv::Mat matchImg = ((dataBuffer.end() - 1)->cameraImg).clone();
