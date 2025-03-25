@@ -1,7 +1,11 @@
 # SFND 2D Feature Tracking
 
 1. Set a ring buffer to have a constant size where the images are being saved, in order to not have too many images and then cause to have overflow or slow the program.
-2. Set Shi-Tomasi, HARRIS, FAST, BRISK, ORB, AKAZE, and SIFT detectors to compare and detect different keypoints in an image.
+2. Set Shi-Tomasi, HARRIS (use non local maxima to obtain only the most valuable keypoints), FAST, BRISK, ORB, AKAZE, and SIFT detectors to compare and detect different keypoints in an image.
+3. Limit the keypoint only to the car in fron in order to calculate the collission time (TTC tiem to collision). 
+4. Apply different descriptor algoirhtms like BRISK, BRIEF, ORB, AKAZE, SIFT in order to accurately describe the keypoints and comprae each method
+5. Match the descripts by suing several techinqiues. cn use brute force to obaint clsoes keypoint. or can use flann that implements behind kdTree and is more optimal. Can also apply crossChecking to reduce the amount of false positives. And can also apply k nearest neighbors to obtain the two closes matches and then compute the ratio between them to reduce false positives if both are very similar. 
+
 <img src="images/keypoints.png" width="820" height="248" />
 
 The idea of the camera course is to build a collision detection system - that's the overall goal for the Final Project. As a preparation for this, you will now build the feature tracking part and test various detector / descriptor combinations to see which ones perform best. This mid-term project consists of four parts:
