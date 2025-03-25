@@ -21,7 +21,7 @@ void visualizeImage(const cv::Mat &img, const vector<cv::KeyPoint> &keypoints) {
     cv::drawKeypoints(img, keypoints, visImage, cv::Scalar::all(-1), cv::DrawMatchesFlags::DRAW_RICH_KEYPOINTS);
 
     //* Show image
-    string windowName = "Corner Detector Results";
+    string windowName = "show image";
     cv::namedWindow(windowName, 6);
     imshow(windowName, visImage);
     cv::waitKey(0);

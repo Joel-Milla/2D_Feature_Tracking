@@ -17,7 +17,13 @@
 #include "dataStructures.h"
 #include "matching2D.hpp"
 
-
+/**
+ * @brief For testing purposes only, limit the amount of keypoints to visualize and debug the program
+ * 
+ * @param detectorType 
+ * @param keypoints 
+ * @param maxKeypoints 
+ */
 void limitKeyPoints(const DetectorType &detectorType, std::vector<cv::KeyPoint> &keypoints, int maxKeypoints) {
     //* Limit number of keypoints (helpful for debugging and learning)    
     if (detectorType == DetectorType::SHITOMASI) { 
@@ -26,6 +32,27 @@ void limitKeyPoints(const DetectorType &detectorType, std::vector<cv::KeyPoint> 
     }
     cv::KeyPointsFilter::retainBest(keypoints, maxKeypoints);
     std::cout << " NOTE: Keypoints have been limited!" << std::endl;
+}
+
+/**
+ * @brief Function that shows the matches between keypoints 
+ * 
+ * @param dataBuffer that contains two images that have their own matches
+ * @param matches vector that contains the correspondence between keypoints
+ */
+void visualizeMatches(const std::deque<DataFrame> &dataBuffer, const std::vector<cv::DMatch> &matches) {
+    cv::Mat matchImg = (dataBuffer.front().cameraImg).clone();
+    cv::drawMatches(dataBuffer.back().cameraImg, dataBuffer.back().keypoints,
+                    dataBuffer.front().cameraImg, dataBuffer.front().keypoints,
+                    matches, matchImg,
+                    cv::Scalar::all(-1), cv::Scalar::all(-1),
+                    std::vector<char>(), cv::DrawMatchesFlags::DRAW_RICH_KEYPOINTS);
+
+    std::string windowName = "Matching keypoints between two camera images";
+    cv::namedWindow(windowName, 7);
+    cv::imshow(windowName, matchImg);
+    std::cout << "Press key to continue to next image" << std::endl;
+    cv::waitKey(0); // wait for key to be pressed
 }
 
 int main(int argc, const char *argv[]) {
@@ -49,6 +76,32 @@ int main(int argc, const char *argv[]) {
 
     //* Loop over all imges
     for (size_t imgIndex = 0; imgIndex <= imgEndIndex - imgStartIndex; imgIndex++) {
+        std::cout << "Image index: " << imgIndex << std::endl;
+        //* Main variables used across all the function
+        // Variables to extract 2D keypoints from current image
+        std::vector<cv::KeyPoint> keypoints;
+        DetectorType detectorType = DetectorType::SIFT;
+        
+        // Variables to keep keypoints on preceding vehicle
+        bool bFocusOnVehicle = true;
+        cv::Rect vehicleRect(535, 180, 180, 150);
+        
+        bool limitKpts = false; // Only for debugging purposes
+        
+        // Variables to get descriptors of keypoints
+        cv::Mat descriptors;
+        DescriptorType descriptorType = DescriptorType::BRISK; // BRIEF, ORB, AKAZE, SIFT
+
+        // Variables to get matches between two images
+        std::vector<cv::DMatch> matches;
+        MatcherType matcherType = MAT_BF;
+        bool is_des_binary = isBinaryDescriptor(descriptorType); // DES_BINARY, DES_HOG
+        SelectorType selectorType = SEL_NN;   // SEL_NN, SEL_KNN
+        
+        // Visualization variables
+        bool visualize_keypoints = true;
+        bool visualize_keypoint_matches = false;
+
         //* Load image and save it into data structure
         // Get the full name of the image by using correct pattern
         std::ostringstream imgNumber;
@@ -69,11 +122,6 @@ int main(int argc, const char *argv[]) {
         if (dataBuffer.size() > dataBufferSizeLimit) dataBuffer.pop_back();
 
         //* Detect image keypoints
-        // Extract 2D keypoints from current image
-        std::vector<cv::KeyPoint> keypoints;
-        DetectorType detectorType = DetectorType::SIFT;
-        bool visualize_keypoints = false;
-
         // Obtain time to get keypoints
         auto start = std::chrono::high_resolution_clock::now();
 
@@ -85,8 +133,6 @@ int main(int argc, const char *argv[]) {
         std::cout << getStringDetectorType(detectorType) << " detection with n= " << keypoints.size() << " in " << time.count() * 0.001 << " s" << std::endl;
         
         //* Only keep keypoints on the preceding vehicle
-        bool bFocusOnVehicle = true;
-        cv::Rect vehicleRect(535, 180, 180, 150);
         if (bFocusOnVehicle) {
             // If a keypoint is outside the box parameter, then remove it from the vector
             keypoints.erase(
@@ -104,21 +150,18 @@ int main(int argc, const char *argv[]) {
             );
         }
 
-        // visualizeImage(imgGray, keypoints);
+        if (visualize_keypoints)
+            visualizeImage(imgGray, keypoints);
 
         //* Only use for midterm, for final project must be false
-        bool bLimitKpts = false;
-        if (bLimitKpts) {
+        if (limitKpts) {
             limitKeyPoints(detectorType, keypoints, 50);
         }
         
         // push keypoints and descriptor for current frame to end of data buffer
         dataBuffer.front().keypoints = keypoints;
-        
 
         //* Extract KeyPoint descriptors
-        cv::Mat descriptors;
-        DescriptorType descriptorType = DescriptorType::BRISK; // BRIEF, ORB, AKAZE, SIFT
         descKeypoints(dataBuffer.front().keypoints, dataBuffer.front().cameraImg, descriptors, descriptorType);
 
         // Push descriptors for current frame to image just added
@@ -126,37 +169,15 @@ int main(int argc, const char *argv[]) {
 
         //* Until there are at least two images, then make the match
         if (dataBuffer.size() > 1) { 
-            std::vector<cv::DMatch> matches;
-            MatcherType matcherType = MAT_BF;
-            bool is_des_binary = isBinaryDescriptor(descriptorType); // DES_BINARY, DES_HOG
-            SelectorType selectorType = SEL_NN;   // SEL_NN, SEL_KNN
-
             matchDescriptors(dataBuffer.back().keypoints, dataBuffer.front().keypoints, dataBuffer.back().descriptors, dataBuffer.front().descriptors, matches, is_des_binary, matcherType, selectorType);
 
             // Store matches in current data frame
             dataBuffer.front().kptMatches = matches;
 
-            std::cout << "#4 : MATCH KEYPOINT DESCRIPTORS done" << std::endl;
-
             // visualize matches between current and previous image
-            bool visualize_keypoint_matches = false;
-            if (bVis) {
-                cv::Mat matchImg = ((dataBuffer.end() - 1)->cameraImg).clone();
-                cv::drawMatches((dataBuffer.end() - 2)->cameraImg, (dataBuffer.end() - 2)->keypoints,
-                                (dataBuffer.end() - 1)->cameraImg, (dataBuffer.end() - 1)->keypoints,
-                                matches, matchImg,
-                                cv::Scalar::all(-1), cv::Scalar::all(-1),
-                                std::vector<char>(), cv::DrawMatchesFlags::DRAW_RICH_KEYPOINTS);
-
-                std::string windowName = "Matching keypoints between two camera images";
-                cv::namedWindow(windowName, 7);
-                cv::imshow(windowName, matchImg);
-                std::cout << "Press key to continue to next image" << std::endl;
-                cv::waitKey(0); // wait for key to be pressed
-            }
-            bVis = false;
+            if (visualize_keypoint_matches)
+                visualizeMatches(dataBuffer, matches);
         }
-
         std::cout << std::endl;
     } // eof loop over all images
 
