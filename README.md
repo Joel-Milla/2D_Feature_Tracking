@@ -1,5 +1,7 @@
 # SFND 2D Feature Tracking
 
+1. Set a ring buffer to have a constant size where the images are being saved, in order to not have too many images and then cause to have overflow or slow the program.
+2. Set Shi-Tomasi, HARRIS, FAST, BRISK, ORB, AKAZE, and SIFT detectors to compare and detect different keypoints in an image.
 <img src="images/keypoints.png" width="820" height="248" />
 
 The idea of the camera course is to build a collision detection system - that's the overall goal for the Final Project. As a preparation for this, you will now build the feature tracking part and test various detector / descriptor combinations to see which ones perform best. This mid-term project consists of four parts:
