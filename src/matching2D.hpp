@@ -18,8 +18,18 @@ enum class DescriptorType {
     BRISK, BRIEF, ORB, AKAZE, SIFT
 };
 
+enum MatcherType {
+    MAT_BF, MAT_FLANN
+};
+
+enum SelectorType {
+    SEL_NN, SEL_KNN
+};
+
 // Helper methods of enums
 std::string getStringDetectorType(DetectorType detectorType);
+std::string getStringDescriptorType(DescriptorType descriptorType);
+bool isBinaryDescriptor(DescriptorType descriptorType);
 
 void visualizeImage(const cv::Mat &img, const std::vector<cv::KeyPoint> &keypoints);
 void detKeypointsHarris(std::vector<cv::KeyPoint> &keypoints, cv::Mat &img);
@@ -28,6 +38,6 @@ void detKeypointsModern(std::vector<cv::KeyPoint> &keypoints, cv::Mat &img, Dete
 void detKeypoints(std::vector<cv::KeyPoint> &keypoints, cv::Mat &img, bool visualize, DetectorType detectorType);
 void descKeypoints(std::vector<cv::KeyPoint> &keypoints, cv::Mat &img, cv::Mat &descriptors, DescriptorType descriptorType);
 void matchDescriptors(std::vector<cv::KeyPoint> &kPtsSource, std::vector<cv::KeyPoint> &kPtsRef, cv::Mat &descSource, cv::Mat &descRef,
-                      std::vector<cv::DMatch> &matches, std::string descriptorType, std::string matcherType, std::string selectorType);
+                      std::vector<cv::DMatch> &matches, bool binaryDescriptor, MatcherType matcherType, SelectorType selectorType, bool crossCheck = false);
 
 #endif /* matching2D_hpp */

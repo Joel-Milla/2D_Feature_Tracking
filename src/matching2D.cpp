@@ -1,6 +1,7 @@
 #include <opencv2/core/cvstd_wrapper.hpp>
 #include <opencv2/core/hal/interface.h>
 #include <opencv2/core/types.hpp>
+#include <stdexcept>
 #include <string>
 #include "matching2D.hpp"
 #include <opencv2/features2d.hpp>
@@ -26,33 +27,79 @@ void visualizeImage(const cv::Mat &img, const vector<cv::KeyPoint> &keypoints) {
     cv::waitKey(0);
 }
 
-// Find best matches for keypoints in two camera images based on several matching methods
+
+/**
+ * @brief Find best matches for keypoints in two camera images based on several matching methods (which are brute force or flann. and nearest neighbor or knearest neighbord) with the option of crossChecking
+ * 
+ * @param kPtsSource keypoints of source
+ * @param kPtsRef keypoints reference
+ * @param descSource descriptors source
+ * @param descRef descriptors reference
+ * @param matches vector that will be populated
+ * @param binaryDescriptor is boolean variable to know if the descriptors of keypoints are binary
+ * @param matcherType is the matcher algorithm to use (brute-force, flann)
+ * @param selectorType is the selector algorithm to use (nearest neighbor, or k nearest neighbor)
+ * @param crossCheck boolean value if want to apply crosscheck
+ */
 void matchDescriptors(std::vector<cv::KeyPoint> &kPtsSource, std::vector<cv::KeyPoint> &kPtsRef, cv::Mat &descSource, cv::Mat &descRef,
-                      std::vector<cv::DMatch> &matches, std::string descriptorType, std::string matcherType, std::string selectorType) {
-    // configure matcher
-    bool crossCheck = false;
+std::vector<cv::DMatch> &matches, bool binaryDescriptor, MatcherType matcherType, SelectorType selectorType, bool crossCheck) {
+    //* configure matcher
     cv::Ptr<cv::DescriptorMatcher> matcher;
 
-    if (matcherType.compare("MAT_BF") == 0)
-    {
-        int normType = cv::NORM_HAMMING;
+    //* Can make BruteForce approach (comparing all the distances between keypoints) or FLANN (which constructs a kdTree and returns the same as BF but more optimized)
+    switch (matcherType) {
+
+    // If crossCheck, then only bring the ones where both keypoints match. This doesn't work with kNN because crossCheck + NN brings always the points that always match, and kNN always brings k results
+    case MAT_BF: {
+        int normType = binaryDescriptor ? cv::NORM_HAMMING : cv::NORM_L2;
         matcher = cv::BFMatcher::create(normType, crossCheck);
+        break;
     }
-    else if (matcherType.compare("MAT_FLANN") == 0)
-    {
-        // ...
+    case MAT_FLANN:
+        if (descSource.type() != CV_32F) { 
+            // OpenCV bug workaround : convert binary descriptors to floating point due to a bug in current OpenCV implementation
+            descSource.convertTo(descSource, CV_32F);
+            descRef.convertTo(descRef, CV_32F);
+        }
+
+        //* Implement FLANN matching
+        matcher = cv::FlannBasedMatcher::create();
+      break;
     }
 
-    // perform matching task
-    if (selectorType.compare("SEL_NN") == 0)
-    { // nearest neighbor (best match)
+    //* Can make nearest neighbor (the closest one) or use kNN to avoid selecting matches when both possible results are similar and can get FP
+    switch (selectorType) {
 
-        matcher->match(descSource, descRef, matches); // Finds the best match for each descriptor in desc1
+    case SEL_NN:
+         matcher->match(descSource, descRef, matches); // Finds the best match for each descriptor in desc1
+        break;
+    case SEL_KNN: {
+        if (crossCheck)
+            std::invalid_argument("Cannot apply crossCheck and at the same time kNN");
+        vector<vector<cv::DMatch>> knnMatches;
+        matcher->knnMatch(descSource, descRef, knnMatches, 2);
+
+
+        //* Filter matches using descriptor distance ratio test
+        float threshold = 0.8;
+        int discarded = 0;
+        for (int indx = 0; indx < knnMatches.size(); indx++) {
+            const vector<cv::DMatch>& match = knnMatches[indx];
+
+            // Get ratio between first and second possible match. If they are almost the same (using threshold to know 'almost') then discard both points to avoid having FP
+            float firstDist = match[0].distance;
+            float secondDist = match[1].distance;
+            float ratio = firstDist / secondDist;
+            bool valid_match = ratio < threshold;
+
+            if (valid_match)
+                matches.push_back(match[0]);
+            else
+                discarded++;
+            
+        }
+        break;
     }
-    else if (selectorType.compare("SEL_KNN") == 0)
-    { // k nearest neighbors (k=2)
-
-        // ...
     }
 }
 
@@ -282,5 +329,41 @@ std::string getStringDetectorType(DetectorType detectorType) {
         return "SIFT";
     default:
         return "";
+    }
+}
+
+std::string getStringDescriptorType(DescriptorType descriptorType) {
+    switch (descriptorType) {
+
+    case DescriptorType::BRISK:
+        return "BRISK";
+    case DescriptorType::BRIEF:
+        return "BRIEF";
+    case DescriptorType::ORB:
+        return "ORB";
+    case DescriptorType::AKAZE:
+        return "AKAZE";
+    case DescriptorType::SIFT:
+        return "SIFT";
+    default:
+        return "";
+    }
+}
+
+bool isBinaryDescriptor(DescriptorType descriptorType) {
+    switch (descriptorType) {
+
+    case DescriptorType::BRISK:
+        return true;
+    case DescriptorType::BRIEF:
+        return true;
+    case DescriptorType::ORB:
+        return true;
+    case DescriptorType::AKAZE:
+        return true;
+    case DescriptorType::SIFT:
+        return false;
+    default:
+        return false;
     }
 }
