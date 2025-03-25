@@ -56,25 +56,40 @@ void matchDescriptors(std::vector<cv::KeyPoint> &kPtsSource, std::vector<cv::Key
     }
 }
 
-// Use one of several types of state-of-art descriptors to uniquely identify keypoints
-void descKeypoints(vector<cv::KeyPoint> &keypoints, cv::Mat &img, cv::Mat &descriptors, string descriptorType) {
-    // select appropriate descriptor
-    cv::Ptr<cv::DescriptorExtractor> extractor;
-    if (descriptorType.compare("BRISK") == 0)
-    {
-
+/**
+ * @brief Receiving the type of descriptor algorithm wanting to run, compute the descriptors of the image
+ * 
+ * @param keypoints that will be described
+ * @param img were the keypoints reside
+ * @param descriptors container where the values will be saved
+ * @param descriptorType which is the algorithm to run (BRISK, BRIEF, ORB, AKAZE, SIFT)
+ */
+void descKeypoints(vector<cv::KeyPoint> &keypoints, cv::Mat &img, cv::Mat &descriptors, DescriptorType descriptorType) {
+    //* Select descriptor and execute it
+    cv::Ptr<cv::DescriptorExtractor> descriptor;
+    switch (descriptorType) {
+    case DescriptorType::BRISK: {
         int threshold = 30;        // FAST/AGAST detection threshold score.
         int octaves = 3;           // detection octaves (use 0 to do single scale)
         float patternScale = 1.0f; // apply this scale to the pattern used for sampling the neighbourhood of a keypoint.
-
-        extractor = cv::BRISK::create(threshold, octaves, patternScale);
+        descriptor = cv::BRISK::create(threshold, octaves, patternScale);
+        break;
     }
-    else
-    {
-
-        //...
+    case DescriptorType::BRIEF:
+        descriptor = cv::BRISK::create();
+        break;
+    case DescriptorType::ORB:
+        descriptor = cv::ORB::create();
+        break;
+    case DescriptorType::AKAZE:
+        descriptor = cv::AKAZE::create();
+        break;
+    case DescriptorType::SIFT:
+        descriptor = cv::SIFT::create();
+        break;
     }
-    extractor->compute(img, keypoints, descriptors);
+    
+    descriptor->compute(img, keypoints, descriptors);
 }
 
 /**
@@ -200,19 +215,19 @@ void detKeypointsModern(std::vector<cv::KeyPoint> &keypoints, cv::Mat &img, Dete
 
     //* Depending on input, set the detector algorithm
     switch (detectorType) {
-    case FAST:
+    case DetectorType::FAST:
         detector = cv::FastFeatureDetector::create(30, true, cv::FastFeatureDetector::TYPE_9_16);
         break;
-    case BRISK:
+    case DetectorType::BRISK:
         detector = cv::BRISK::create(30, true, cv::FastFeatureDetector::TYPE_9_16);
         break;
-    case ORB:
+    case DetectorType::ORB:
         detector = cv::ORB::create();
         break;
-    case AKAZE:
+    case DetectorType::AKAZE:
         detector = cv::AKAZE::create();
         break;
-    case SIFT:
+    case DetectorType::SIFT:
         detector = cv::SIFT::create();
         break;
     default:
@@ -234,10 +249,10 @@ void detKeypointsModern(std::vector<cv::KeyPoint> &keypoints, cv::Mat &img, Dete
 void detKeypoints(vector<cv::KeyPoint> &keypoints, cv::Mat &img, bool visualize, DetectorType detectorType) {
     switch (detectorType) {
 
-    case SHITOMASI:
+    case DetectorType::SHITOMASI:
         detKeypointsShiTomasi(keypoints, img, visualize);
         break;
-    case HARRIS:
+    case DetectorType::HARRIS:
         detKeypointsHarris(keypoints, img, visualize);
         break;
     default:
@@ -246,4 +261,26 @@ void detKeypoints(vector<cv::KeyPoint> &keypoints, cv::Mat &img, bool visualize,
     }
 
     if (visualize) visualizeImage(img, keypoints);
+}
+
+//* Helper functions enum
+std::string getStringDetectorType(DetectorType detectorType) {
+    switch (detectorType) {
+    case DetectorType::SHITOMASI:
+        return "SHITOMASI";
+    case DetectorType::HARRIS:
+        return "HARRIS";
+    case DetectorType::FAST:
+        return "FAST";
+    case DetectorType::BRISK:
+        return "BRISK";
+    case DetectorType::ORB:
+        return "ORB";
+    case DetectorType::AKAZE:
+        return "AKAZE";
+    case DetectorType::SIFT:
+        return "SIFT";
+    default:
+        return "";
+    }
 }

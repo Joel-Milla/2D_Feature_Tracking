@@ -22,7 +22,7 @@ using namespace std;
 
 void limitKeyPoints(const DetectorType &detectorType, vector<cv::KeyPoint> &keypoints, int maxKeypoints) {
     //* Limit number of keypoints (helpful for debugging and learning)    
-    if (detectorType == SHITOMASI) { 
+    if (detectorType == DetectorType::SHITOMASI) { 
         // there is no response info, so keep the first 50 as they are sorted in descending quality order
         keypoints.erase(keypoints.begin() + maxKeypoints, keypoints.end());
     }
@@ -73,7 +73,7 @@ int main(int argc, const char *argv[]) {
         //* Detect image keypoints
         // Extract 2D keypoints from current image
         vector<cv::KeyPoint> keypoints;
-        DetectorType detectorType = SIFT;
+        DetectorType detectorType = DetectorType::SIFT;
         bool visualize_keypoints = false;
 
         // Obtain time to get keypoints
@@ -84,7 +84,7 @@ int main(int argc, const char *argv[]) {
 
         auto end = chrono::high_resolution_clock::now();
         auto time = chrono::duration_cast<chrono::milliseconds>(end - start);
-        cout << detectorType << " detection with n= " << keypoints.size() << " in " << time.count() * 0.001 << " s" << endl;
+        cout << getStringDetectorType(detectorType) << " detection with n= " << keypoints.size() << " in " << time.count() * 0.001 << " s" << endl;
         
         //* Only keep keypoints on the preceding vehicle
         bool bFocusOnVehicle = true;
@@ -106,6 +106,8 @@ int main(int argc, const char *argv[]) {
             );
         }
 
+        // visualizeImage(imgGray, keypoints);
+
         //* Only use for midterm, for final project must be false
         bool bLimitKpts = false;
         if (bLimitKpts) {
@@ -113,30 +115,19 @@ int main(int argc, const char *argv[]) {
         }
         
         // push keypoints and descriptor for current frame to end of data buffer
-        (dataBuffer.end() - 1)->keypoints = keypoints;
-        cout << "#2 : DETECT KEYPOINTS done" << endl;
+        dataBuffer.front().keypoints = keypoints;
         
 
-        /* EXTRACT KEYPOINT DESCRIPTORS */
-
-        //// STUDENT ASSIGNMENT
-        //// TASK MP.4 -> add the following descriptors in file matching2D.cpp and enable string-based selection based on descriptorType
-        //// -> BRIEF, ORB, FREAK, AKAZE, SIFT
-
+        //* Extract KeyPoint descriptors
         cv::Mat descriptors;
-        string descriptorType = "BRISK"; // BRIEF, ORB, FREAK, AKAZE, SIFT
-        descKeypoints((dataBuffer.end() - 1)->keypoints, (dataBuffer.end() - 1)->cameraImg, descriptors, descriptorType);
-        //// EOF STUDENT ASSIGNMENT
+        DescriptorType descriptorType = DescriptorType::BRISK; // BRIEF, ORB, AKAZE, SIFT
+        descKeypoints(dataBuffer.front().keypoints, dataBuffer.front().cameraImg, descriptors, descriptorType);
 
-        // push descriptors for current frame to end of data buffer
-        (dataBuffer.end() - 1)->descriptors = descriptors;
+        // Push descriptors for current frame to image just added
+        dataBuffer.front().descriptors = descriptors;
 
-        cout << "#3 : EXTRACT DESCRIPTORS done" << endl;
-
+        //* Until there are at least two images, then make the match
         if (dataBuffer.size() > 1) { 
-            // wait until at least two images have been processed
-            /* MATCH KEYPOINT DESCRIPTORS */
-
             vector<cv::DMatch> matches;
             string matcherType = "MAT_BF";        // MAT_BF, MAT_FLANN
             string descriptorType = "DES_BINARY"; // DES_BINARY, DES_HOG
