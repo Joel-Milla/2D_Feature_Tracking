@@ -10,6 +10,7 @@
 #include <opencv2/features2d.hpp>
 
 
+void visualizeImage(const cv::Mat &img, const std::vector<cv::KeyPoint> &keypoints);
 void detKeypointsHarris(std::vector<cv::KeyPoint> &keypoints, cv::Mat &img);
 void detKeypointsShiTomasi(std::vector<cv::KeyPoint> &keypoints, cv::Mat &img);
 void detKeypointsModern(std::vector<cv::KeyPoint> &keypoints, cv::Mat &img, std::string detectorType);

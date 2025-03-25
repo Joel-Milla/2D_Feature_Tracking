@@ -1,6 +1,9 @@
+#include <algorithm>
 #include <chrono>
+#include <cstddef>
 #include <iostream>
 #include <opencv2/core/mat.hpp>
+#include <opencv2/core/types.hpp>
 #include <sstream>
 #include <iomanip>
 #include <vector>
@@ -61,7 +64,7 @@ int main(int argc, const char *argv[]) {
         // Extract 2D keypoints from current image
         vector<cv::KeyPoint> keypoints;
         string detectorType = "SIFT";
-        bool visualize_keypoints = true;
+        bool visualize_keypoints = false;
 
         // Obtain time to get keypoints
         auto start = chrono::high_resolution_clock::now();
@@ -73,16 +76,28 @@ int main(int argc, const char *argv[]) {
         auto time = chrono::duration_cast<chrono::milliseconds>(end - start);
         cout << detectorType << " detection with n= " << keypoints.size() << " in " << time.count() * 0.001 << " s" << endl;
         
-        //// STUDENT ASSIGNMENT
-        //// TASK MP.3 -> only keep keypoints on the preceding vehicle
-
-        // only keep keypoints on the preceding vehicle
+        //* Only keep keypoints on the preceding vehicle
         bool bFocusOnVehicle = true;
         cv::Rect vehicleRect(535, 180, 180, 150);
-        if (bFocusOnVehicle)
-        {
-            // ...
+        if (bFocusOnVehicle) {
+            // If a keypoint is outside the box parameter, then remove it from the vector
+            keypoints.erase(
+                std::remove_if(
+                    keypoints.begin(),
+                    keypoints.end(),
+                    [&vehicleRect](cv::KeyPoint const &keyPoint) {
+                        int x = keyPoint.pt.x;
+                        int y = keyPoint.pt.y;
+                        cv::Point p(x, y);
+                        return !vehicleRect.contains(p);
+                    }
+                ),
+                keypoints.end()
+            );
+            cout << "ENTERED!!";
         }
+
+        visualizeImage(imgGray, keypoints);
 
         //// EOF STUDENT ASSIGNMENT
 
