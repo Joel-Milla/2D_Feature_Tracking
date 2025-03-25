@@ -1,3 +1,4 @@
+#include <iostream>
 #include <opencv2/core/cvstd_wrapper.hpp>
 #include <opencv2/core/hal/interface.h>
 #include <opencv2/core/types.hpp>
@@ -307,7 +308,66 @@ void detKeypoints(vector<cv::KeyPoint> &keypoints, const cv::Mat &img, const boo
       break;
     }
 
-    if (visualize) visualizeImage(img, keypoints);
+    // if (visualize) visualizeImage(img, keypoints);
+}
+
+/**
+ * @brief For testing purposes only, limit the amount of keypoints to visualize and debug the program
+ * 
+ * @param detectorType 
+ * @param keypoints 
+ * @param maxKeypoints 
+ */
+void limitKeyPoints(const DetectorType &detectorType, std::vector<cv::KeyPoint> &keypoints, int maxKeypoints) {
+    //* Limit number of keypoints (helpful for debugging and learning)    
+    if (detectorType == DetectorType::SHITOMASI) { 
+        // there is no response info, so keep the first 50 as they are sorted in descending quality order
+        keypoints.erase(keypoints.begin() + maxKeypoints, keypoints.end());
+    }
+    cv::KeyPointsFilter::retainBest(keypoints, maxKeypoints);
+    std::cout << " NOTE: Keypoints have been limited!" << std::endl;
+}
+
+/**
+ * @brief Function which obtains the keypoints of an image based on the parameters received 
+ * 
+ * @param imgGray which is image that we will compute keypoints
+ * @param visualize_keypoints bool variable to know if visualize image
+ * @param detectorType is the type of detector algorithm to use
+ * @param bFocusOnVehicle if true then removes the keypoints that are not part of vehicle in front
+ * @param limitKpts for debugging purposes, to limit kpts and see them in image
+ * @param vehicleRect rectangle that crops the vehicle in front
+ * @param keypoints vector where the keypoints will be saved
+ */
+void detectImageKeypoints(const cv::Mat imgGray, const bool visualize_keypoints, const DetectorType detectorType, const bool bFocusOnVehicle, const bool limitKpts, const cv::Rect vehicleRect, std::vector<cv::KeyPoint> &keypoints) {
+    // Keypoints array gets added the keypoints
+    detKeypoints(keypoints, imgGray, visualize_keypoints, detectorType);
+    
+    //* Only keep keypoints on the preceding vehicle
+    if (bFocusOnVehicle) {
+        // If a keypoint is outside the box parameter, then remove it from the vector
+        keypoints.erase(
+            std::remove_if(
+                keypoints.begin(),
+                keypoints.end(),
+                [&vehicleRect](cv::KeyPoint const &keyPoint) {
+                    int x = keyPoint.pt.x;
+                    int y = keyPoint.pt.y;
+                    cv::Point p(x, y);
+                    return !vehicleRect.contains(p);
+                }
+            ),
+            keypoints.end()
+        );
+    }
+
+    if (visualize_keypoints)
+        visualizeImage(imgGray, keypoints);
+
+    //* Only use for debugging purposes when want to visualize the keypoints
+    if (limitKpts) {
+        limitKeyPoints(detectorType, keypoints, 50);
+    }
 }
 
 //* Helper functions enum

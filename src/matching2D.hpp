@@ -38,5 +38,7 @@ void detKeypointsModern(std::vector<cv::KeyPoint> &keypoints, cv::Mat &img, Dete
 void detKeypoints(std::vector<cv::KeyPoint> &keypoints, const cv::Mat &img, const bool visualize, const DetectorType detectorType);
 void descKeypoints(std::vector<cv::KeyPoint> &keypoints, const cv::Mat &img, cv::Mat &descriptors, const DescriptorType descriptorType);
 void matchDescriptors(const std::vector<cv::KeyPoint> &kPtsSource, const std::vector<cv::KeyPoint> &kPtsRef, const cv::Mat &descSource, const cv::Mat &descRef, std::vector<cv::DMatch> &matches, const bool binaryDescriptor, const MatcherType matcherType, const SelectorType selectorType, const bool crossCheck = false);
+void limitKeyPoints(const DetectorType &detectorType, std::vector<cv::KeyPoint> &keypoints, int maxKeypoints);
+void detectImageKeypoints(const cv::Mat imgGray, const bool visualize_keypoints, const DetectorType detectorType, const bool bFocusOnVehicle, const bool limitKpts, const cv::Rect vehicleRect, std::vector<cv::KeyPoint> &keypoints);
 
 #endif /* matching2D_hpp */

@@ -1,0 +1,66 @@
+Average count of keypoints and average keypoint size using all the detectors:
+SHITOMASI
+Average count: 117.9 with average keypoint size of: 40
+HARRIS
+Average count: 86.4 with average keypoint size of: 60
+FAST
+Average count: 149.1 with average keypoint size of: 70
+BRISK
+Average count: 186.1 with average keypoint size of: 140.098
+ORB
+Average count: 115 with average keypoint size of: 560.097
+AKAZE
+Average count: 165.5 with average keypoint size of: 76.8091
+SIFT
+Average count: 137.1 with average keypoint size of: 50.5154
+
+Average count of matches per all possible combinations:
+SHITOMASI + BRISK
+Average count of matches: 76.7
+SHITOMASI + BRIEF
+Average count of matches: 76.7
+SHITOMASI + ORB
+Average count of matches: 90.7
+SHITOMASI + SIFT
+Average count of matches: 92.7
+HARRIS + BRISK
+Average count of matches: 26.6
+HARRIS + BRIEF
+Average count of matches: 26.6
+HARRIS + ORB
+Average count of matches: 26.9
+HARRIS + SIFT
+Average count of matches: 25.9
+FAST + BRISK
+Average count of matches: 89.9
+FAST + BRIEF
+Average count of matches: 89.9
+FAST + ORB
+Average count of matches: 108.1
+FAST + SIFT
+Average count of matches: 104.6
+BRISK + BRISK
+Average count of matches: 112.4
+BRISK + BRIEF
+Average count of matches: 112.4
+BRISK + ORB
+Average count of matches: 109.3
+BRISK + SIFT
+Average count of matches: 114.2
+ORB + BRISK
+Average count of matches: 74.4
+ORB + BRIEF
+Average count of matches: 74.4
+ORB + ORB
+Average count of matches: 75.4
+ORB + SIFT
+Average count of matches: 75.6
+AKAZE + AKAZE
+Average count of matches: 124.9
+SIFT + BRISK
+Average count of matches: 58.6
+SIFT + BRIEF
+Average count of matches: 58.6
+SIFT + SIFT
+Average count of matches: 79
+

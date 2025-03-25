@@ -1,7 +1,7 @@
-#include <algorithm>
-#include <chrono>
+#include <array>
 #include <cstddef>
 #include <iostream>
+#include <numeric>
 #include <opencv2/core/mat.hpp>
 #include <opencv2/core/types.hpp>
 #include <sstream>
@@ -17,23 +17,6 @@
 
 #include "dataStructures.h"
 #include "matching2D.hpp"
-
-/**
- * @brief For testing purposes only, limit the amount of keypoints to visualize and debug the program
- * 
- * @param detectorType 
- * @param keypoints 
- * @param maxKeypoints 
- */
-void limitKeyPoints(const DetectorType &detectorType, std::vector<cv::KeyPoint> &keypoints, int maxKeypoints) {
-    //* Limit number of keypoints (helpful for debugging and learning)    
-    if (detectorType == DetectorType::SHITOMASI) { 
-        // there is no response info, so keep the first 50 as they are sorted in descending quality order
-        keypoints.erase(keypoints.begin() + maxKeypoints, keypoints.end());
-    }
-    cv::KeyPointsFilter::retainBest(keypoints, maxKeypoints);
-    std::cout << " NOTE: Keypoints have been limited!" << std::endl;
-}
 
 /**
  * @brief Function that shows the matches between keypoints 
@@ -82,52 +65,23 @@ cv::Mat getImage(const int imgStartIndex, const int imgEndIndex, const int imgFi
 }
 
 /**
- * @brief Function which obtains the keypoints of an image based on the parameters received 
+ * @brief Function that computes the average count of keypoints and average size of keypoint per detector 
  * 
- * @param imgGray which is image that we will compute keypoints
- * @param visualize_keypoints bool variable to know if visualize image
- * @param detectorType is the type of detector algorithm to use
- * @param bFocusOnVehicle if true then removes the keypoints that are not part of vehicle in front
- * @param limitKpts for debugging purposes, to limit kpts and see them in image
- * @param vehicleRect rectangle that crops the vehicle in front
- * @param keypoints vector where the keypoints will be saved
+ * @param keypoints array of keypoints
+ * @param count accumulated count
+ * @param average accumulated average
  */
-void detectImageKeypoints(const cv::Mat imgGray, const bool visualize_keypoints, const DetectorType detectorType, const bool bFocusOnVehicle, const bool limitKpts, const cv::Rect vehicleRect, std::vector<cv::KeyPoint> keypoints) {
-    // Obtain time to get keypoints
-    auto start = std::chrono::high_resolution_clock::now();
-
-    // Keypoints array gets added the keypoints
-    detKeypoints(keypoints, imgGray, visualize_keypoints, detectorType);
-
-    auto end = std::chrono::high_resolution_clock::now();
-    auto time = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
-    std::cout << getStringDetectorType(detectorType) << " detection with n= " << keypoints.size() << " in " << time.count() * 0.001 << " s" << std::endl;
-    
-    //* Only keep keypoints on the preceding vehicle
-    if (bFocusOnVehicle) {
-        // If a keypoint is outside the box parameter, then remove it from the vector
-        keypoints.erase(
-            std::remove_if(
-                keypoints.begin(),
-                keypoints.end(),
-                [&vehicleRect](cv::KeyPoint const &keyPoint) {
-                    int x = keyPoint.pt.x;
-                    int y = keyPoint.pt.y;
-                    cv::Point p(x, y);
-                    return !vehicleRect.contains(p);
-                }
-            ),
-            keypoints.end()
-        );
+void printKeypointInformation(const std::vector<cv::KeyPoint> &keypoints, float &count, float &average) {
+    // Update the count and average values
+    float sum = 0;
+    if(!keypoints.empty()) {
+        count += static_cast<float>(keypoints.size());
+        sum += std::accumulate(keypoints.begin(), keypoints.end(), 0.0f, [](float accumulate, cv::KeyPoint kp) {
+            return accumulate + kp.size;
+        });
+        
     }
-
-    if (visualize_keypoints)
-        visualizeImage(imgGray, keypoints);
-
-    //* Only use for debugging purposes when want to visualize the keypoints
-    if (limitKpts) {
-        limitKeyPoints(detectorType, keypoints, 50);
-    }
+    average += (sum / keypoints.size());
 }
 
 /**
@@ -148,14 +102,15 @@ void detectImageKeypoints(const cv::Mat imgGray, const bool visualize_keypoints,
  * @param bFocusOnVehicle only focus on vehicle upfront
  * @param dataBuffer unique continer that changes during program, it holds the images, up to limit of dataBufferSizeLimit
  */
-void loopOverImages(const int imgStartIndex, const int imgEndIndex, const int imgFillWidth, const std::string imgPathPrefix, const std::string imgFileType, const int dataBufferSizeLimit, const bool visualize_keypoints, const bool visualize_keypoint_matches, const DetectorType detectorType, const DescriptorType descriptorType, const MatcherType matcherType, const SelectorType selectorType, const bool bFocusOnVehicle, std::deque<DataFrame> dataBuffer) {
+void loopOverImages(const int imgStartIndex, const int imgEndIndex, const int imgFillWidth, const std::string imgPathPrefix, const std::string imgFileType, const int dataBufferSizeLimit, const bool visualize_keypoints, const bool visualize_keypoint_matches, bool limitKpts, const DetectorType detectorType, const DescriptorType descriptorType, const MatcherType matcherType, const SelectorType selectorType, const bool bFocusOnVehicle, std::deque<DataFrame> dataBuffer) {
+    float count = 0;
+    float average = 0;
+    float averageMatches = 0;
     //* Loop over all imges
     for (size_t imgIndex = 0; imgIndex <= imgEndIndex - imgStartIndex; imgIndex++) {
         //* Main variables used across all the function
         // Variables to extract 2D keypoints from current image
         std::vector<cv::KeyPoint> keypoints;
-        
-        bool limitKpts = false; // Only for debugging purposes
         
         // Variables to get descriptors of keypoints
         cv::Mat descriptors;
@@ -168,7 +123,7 @@ void loopOverImages(const int imgStartIndex, const int imgEndIndex, const int im
         bool is_des_binary = isBinaryDescriptor(descriptorType); // DES_BINARY, DES_HOG
 
         //* Start creating and matching keypoints
-        std::cout << "Image index: " << imgIndex << std::endl;
+        // std::cout << "Image index: " << imgIndex << std::endl;
 
         //* Load image and save it into data structure
         cv::Mat imgGray = getImage(imgStartIndex, imgEndIndex, imgFillWidth, imgIndex, imgPathPrefix, imgFileType);
@@ -183,6 +138,7 @@ void loopOverImages(const int imgStartIndex, const int imgEndIndex, const int im
 
         //* Detect image keypoints
         detectImageKeypoints(imgGray, visualize_keypoints, detectorType, bFocusOnVehicle, limitKpts, vehicleRect, keypoints);
+        // printKeypointInformation(keypoints, count, average);
         
         // Push keypoints for current frame to front of data buffer
         dataBuffer.front().keypoints = keypoints;
@@ -200,12 +156,18 @@ void loopOverImages(const int imgStartIndex, const int imgEndIndex, const int im
             // Store matches in current data frame
             dataBuffer.front().kptMatches = matches;
 
+            //* Count matches
+            averageMatches += matches.size();
+
             // visualize matches between current and previous image
             if (visualize_keypoint_matches)
                 visualizeMatches(dataBuffer, matches);
         }
-        std::cout << std::endl;
     } // eof loop over all images
+
+    // std::cout << "Average count: " << count / 10 << " with average keypoint size of: " << average << std::endl;
+    averageMatches /= 10;
+    std::cout << "Average count of matches: " << averageMatches << std::endl;
 }
 
 int main(int argc, const char *argv[]) {
@@ -227,21 +189,59 @@ int main(int argc, const char *argv[]) {
     int dataBufferSizeLimit = 2;       // no. of images which are held in memory (ring buffer) at the same time
 
     // Visualization variables
-    bool visualize_keypoints = true;
+    bool visualize_keypoints = false;
     bool visualize_keypoint_matches = false;
+    bool limitKpts = false; // Only for debugging purposes
 
     // Types
     DetectorType detectorType = DetectorType::SIFT;
     DescriptorType descriptorType = DescriptorType::BRISK; // BRIEF, ORB, AKAZE, SIFT
     MatcherType matcherType = MAT_BF;
-    SelectorType selectorType = SEL_NN;   // SEL_NN, SEL_KNN
+    SelectorType selectorType = SEL_KNN;   // SEL_NN, SEL_KNN
 
     // Variables to keep keypoints on preceding vehicle
     bool bFocusOnVehicle = true;
 
-    //* The lines below are in charge of looping over the program
-    std::deque<DataFrame> dataBuffer; // Dequeue for fast insertion/deletion at the ends of the list
-    loopOverImages(imgStartIndex, imgEndIndex, imgFillWidth, imgPathPrefix, imgFileType, dataBufferSizeLimit, visualize_keypoints, visualize_keypoint_matches, detectorType, descriptorType, matcherType, selectorType, bFocusOnVehicle, dataBuffer);
+    const std::array<DetectorType, 7> allDetectors = {
+        DetectorType::SHITOMASI, 
+        DetectorType::HARRIS, 
+        DetectorType::FAST,
+        DetectorType::BRISK, 
+        DetectorType::ORB, 
+        DetectorType::AKAZE, 
+        DetectorType::SIFT
+    };
+
+    const std::array<DescriptorType, 5> allDescriptors = {
+        DescriptorType::BRISK, 
+        DescriptorType::BRIEF, 
+        DescriptorType::ORB, 
+        DescriptorType::AKAZE, 
+        DescriptorType::SIFT
+    };
+
+    //* Loop over all possible descriptors and detectors
+    for (const auto &detector : allDetectors) {
+        
+        detectorType = detector;
+        for (const auto &descriptor : allDescriptors) {
+            std::deque<DataFrame> dataBuffer; // Dequeue for fast insertion/deletion at the ends of the list
+            descriptorType = descriptor;
+
+            if (detectorType == DetectorType::AKAZE || descriptorType == DescriptorType::AKAZE) {
+                if (detectorType != DetectorType::AKAZE || descriptorType != DescriptorType::AKAZE)
+                    continue;
+            }
+
+            if (detectorType == DetectorType::SIFT && descriptorType == DescriptorType::ORB)
+                continue; // sift and orb are incompatible or generate too much problems
+
+            std::cout << getStringDetectorType(detectorType) << " + " << getStringDescriptorType(descriptorType) << std::endl;
+            //* The lines below are in charge of looping over the program
+
+            loopOverImages(imgStartIndex, imgEndIndex, imgFillWidth, imgPathPrefix, imgFileType, dataBufferSizeLimit, visualize_keypoints, visualize_keypoint_matches, limitKpts, detectorType, descriptorType, matcherType, selectorType, bFocusOnVehicle, dataBuffer);
+        }
+    }
 
     return 0;
 }
