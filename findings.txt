@@ -64,3 +64,52 @@ Average count of matches: 58.6
 SIFT + SIFT
 Average count of matches: 79
 
+Average time taken to compute the keypoints and to compute the matches
+SHITOMASI + BRISK
+Time taken: 0.514 s
+SHITOMASI + BRIEF
+Time taken: 0.471 s
+SHITOMASI + ORB
+Time taken: 0.106 s
+SHITOMASI + SIFT
+Time taken: 0.194 s
+HARRIS + BRISK
+Time taken: 0.479 s
+HARRIS + BRIEF
+Time taken: 0.476 s
+HARRIS + ORB
+Time taken: 0.111 s
+HARRIS + SIFT
+Time taken: 0.18 s
+FAST + BRISK
+Time taken: 0.422 s
+FAST + BRIEF
+Time taken: 0.415 s
+FAST + ORB
+Time taken: 0.064 s
+FAST + SIFT
+Time taken: 0.144 s
+BRISK + BRISK
+Time taken: 0.986 s
+BRISK + BRIEF
+Time taken: 0.984 s
+BRISK + ORB
+Time taken: 0.625 s
+BRISK + SIFT
+Time taken: 0.779 s
+ORB + BRISK
+Time taken: 0.605 s
+ORB + BRIEF
+Time taken: 0.333 s
+ORB + ORB
+Time taken: 0.115 s
+ORB + SIFT
+Time taken: 0.239 s
+AKAZE + AKAZE
+Time taken: 0.961 s
+SIFT + BRISK
+Time taken: 0.847 s
+SIFT + BRIEF
+Time taken: 0.86 s
+SIFT + SIFT
+Time taken: 0.831 s

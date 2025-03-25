@@ -1,9 +1,11 @@
 #include <array>
+#include <chrono>
 #include <cstddef>
 #include <iostream>
 #include <numeric>
 #include <opencv2/core/mat.hpp>
 #include <opencv2/core/types.hpp>
+#include <ratio>
 #include <sstream>
 #include <iomanip>
 #include <string>
@@ -103,9 +105,9 @@ void printKeypointInformation(const std::vector<cv::KeyPoint> &keypoints, float 
  * @param dataBuffer unique continer that changes during program, it holds the images, up to limit of dataBufferSizeLimit
  */
 void loopOverImages(const int imgStartIndex, const int imgEndIndex, const int imgFillWidth, const std::string imgPathPrefix, const std::string imgFileType, const int dataBufferSizeLimit, const bool visualize_keypoints, const bool visualize_keypoint_matches, bool limitKpts, const DetectorType detectorType, const DescriptorType descriptorType, const MatcherType matcherType, const SelectorType selectorType, const bool bFocusOnVehicle, std::deque<DataFrame> dataBuffer) {
-    float count = 0;
-    float average = 0;
-    float averageMatches = 0;
+    // float count = 0;
+    // float average = 0;
+    // float averageMatches = 0;
     //* Loop over all imges
     for (size_t imgIndex = 0; imgIndex <= imgEndIndex - imgStartIndex; imgIndex++) {
         //* Main variables used across all the function
@@ -157,7 +159,7 @@ void loopOverImages(const int imgStartIndex, const int imgEndIndex, const int im
             dataBuffer.front().kptMatches = matches;
 
             //* Count matches
-            averageMatches += matches.size();
+            // averageMatches += matches.size();
 
             // visualize matches between current and previous image
             if (visualize_keypoint_matches)
@@ -166,8 +168,8 @@ void loopOverImages(const int imgStartIndex, const int imgEndIndex, const int im
     } // eof loop over all images
 
     // std::cout << "Average count: " << count / 10 << " with average keypoint size of: " << average << std::endl;
-    averageMatches /= 10;
-    std::cout << "Average count of matches: " << averageMatches << std::endl;
+    // averageMatches /= 10;
+    // std::cout << "Average count of matches: " << averageMatches << std::endl;
 }
 
 int main(int argc, const char *argv[]) {
@@ -236,10 +238,16 @@ int main(int argc, const char *argv[]) {
             if (detectorType == DetectorType::SIFT && descriptorType == DescriptorType::ORB)
                 continue; // sift and orb are incompatible or generate too much problems
 
+            auto start = std::chrono::high_resolution_clock::now();
+
             std::cout << getStringDetectorType(detectorType) << " + " << getStringDescriptorType(descriptorType) << std::endl;
             //* The lines below are in charge of looping over the program
 
             loopOverImages(imgStartIndex, imgEndIndex, imgFillWidth, imgPathPrefix, imgFileType, dataBufferSizeLimit, visualize_keypoints, visualize_keypoint_matches, limitKpts, detectorType, descriptorType, matcherType, selectorType, bFocusOnVehicle, dataBuffer);
+
+            auto end = std::chrono::high_resolution_clock::now();
+            auto time = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
+            std::cout << "Time taken: " << time.count() * 0.001 << " s" << std::endl;
         }
     }
 
